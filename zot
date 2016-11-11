@@ -1,0 +1,89 @@
+#! /usr/bin/env python
+from pprint import pprint
+from pprint import pformat
+from pyzotero import zotero
+from optparse import OptionParser
+import os
+import pickle
+from termcolor import colored
+
+usage = '''
+zoy [options] <search query>
+use -r to refresh and sync zotero library.
+Add query to search your database.
+Search results will be shown alongside an index number (if asterisc next to number then url is missing)
+add -n option and index number to open result in lynx
+'''
+USER = '1681836'
+API = 'yjPIdkfiERWGKB5qtxyX0HJJ'
+parser = OptionParser(usage = usage)
+parser.add_option(	"-r", "--refresh",
+			dest = 'refresh',action='store_true',default=False,
+          	        help="reload", )
+
+parser.add_option(	"-n", dest="number",
+			default = None, type='int',
+			help="file to open, leave zero for search mode")
+(options, args) = parser.parse_args()
+
+
+home =  os.getenv("HOME")
+def get_items():
+	zot = zotero.Zotero(USER, 'user', API)
+	return  zot.items()
+
+
+def items(refresh = False):
+	if refresh:
+		items = get_items()
+		with open(home+'/.zot', 'wb') as f:
+			pickle.dump(items, f, pickle.HIGHEST_PROTOCOL)
+	else:
+		try:
+			with open(home+'/.zot', 'rb') as f:
+				items =  pickle.load(f)
+		except:
+			with open(home+'/.zot', 'wb') as f:
+				items = get_items()
+				pickle.dump(items, f, pickle.HIGHEST_PROTOCOL)
+	return items
+ITEMS = items(refresh = options.refresh)
+
+
+def search(q=None, searchItems = ['title','abstractNote'],N=None):
+	n = 0
+	if q == None:
+		q = raw_input('query: ')
+
+	for item in ITEMS:
+		data = item['data']
+		searchItemsForItem =  filter(lambda x: x in data.keys(),searchItems)
+		toSearch = '\n'.join([data[x] for x in searchItemsForItem])
+
+		if q.lower() in toSearch.lower():
+			if N==None:
+				if data['url']=='':
+					print str(n)+'*','\t',data['title']
+				else:
+					print n,'\t',data['title']
+				if 'creators' in data.keys():
+					print colored('\t'+ ', '.join([c['lastName'] for c in data['creators']]),'green')
+#					print data['creators']
+			elif N==n:
+				if data['url']=='':
+					colors = ['red','cyan']
+					cNumber = 0
+					for a,b in data.iteritems():
+						c = colors[cNumber%2]
+						cNumber+=1
+						print colored(pformat({a:b}),c)
+#					pprint(data)
+				else:
+					pprint (data['url'])
+					os.system('lynx -accept_all_cookies '+data['url'])
+				break
+			n+=1
+#		break
+
+q ='\n'.join(args)
+search(q,N=options.number)
