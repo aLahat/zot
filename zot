@@ -8,14 +8,14 @@ import pickle
 from termcolor import colored
 
 usage = '''
-zoy [options] <search query>
+zot [options] <search query>
 use -r to refresh and sync zotero library.
 Add query to search your database.
 Search results will be shown alongside an index number (if asterisc next to number then url is missing)
 add -n option and index number to open result in lynx
 '''
-USER = '1681836'
-API = 'yjPIdkfiERWGKB5qtxyX0HJJ'
+USER = '*******'
+API = '*******'
 parser = OptionParser(usage = usage)
 parser.add_option(	"-r", "--refresh",
 			dest = 'refresh',action='store_true',default=False,
